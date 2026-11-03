@@ -159,13 +159,17 @@ def is_complete(src):
 
   Terminal.registerExtension({
     name: 'python',
-    info: 'Python Package installed successfully! Use PYTHON or RUN file.py to begin.',
+    info: 'Python Package installed successfully! Use RUN{python} to start the REPL, or RUN(file.py) to run a script.',
+    run: async function () {
+      this.printSystem('Initializing Python... (first load may take a few seconds)');
+      try { await init(); }
+      catch (e) { throw new Error('Python failed to start: ' + e.message); }
+      this.mode = 'python';
+      this.replBuffer = [];
+      this.promptPrefix = '>>> ';
+      this.updatePrompt();
+    },
     commands: {
-      PYTHON: async function () {
-        try { await init(); }
-        catch (e) { throw new Error('Python failed to start: ' + e.message); }
-        this.mode = 'python'; this.replBuffer = []; this.promptPrefix = '>>> '; this.updatePrompt();
-      },
       PIP: async function (arg) {
         const pkg = arg.trim();
         if (!pkg) throw new Error('Usage: PIP <package>');
@@ -173,6 +177,7 @@ def is_complete(src):
       },
       __PYTHON_EVAL__: async function (buf) { await runBuffer(this, buf); },
       __PYTHON_PIP__: async function (pkg) {
+        this.printSystem('Installing pip package: ' + pkg + '...');
         await init();
         await new Promise((res, rej) => {
           const id = 'p' + Math.random().toString(36).slice(2);
@@ -195,8 +200,16 @@ def is_complete(src):
       }
     },
     runners: {
-      '.py': async function (filename, content) { await init(); await runBuffer(this, [content]); },
-      '.pyw': async function (filename, content) { await init(); await runBuffer(this, [content]); }
+      '.py': async function (filename, content) {
+        this.printSystem('Initializing Python... (first load may take a few seconds)');
+        await init();
+        await runBuffer(this, [content]);
+      },
+      '.pyw': async function (filename, content) {
+        this.printSystem('Initializing Python... (first load may take a few seconds)');
+        await init();
+        await runBuffer(this, [content]);
+      }
     }
   });
 })();

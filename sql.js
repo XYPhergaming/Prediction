@@ -18,14 +18,16 @@
 
   T.registerExtension({
     name: 'sql',
-    info: 'SQL Package installed successfully! Use SQL to enter the prompt or RUN file.sql.',
+    info: 'SQL Package installed successfully! Use RUN{sql} to start the SQL prompt, or RUN(file.sql) to execute a script.',
+    run: async function () {
+      this.printSystem('Initializing SQL...');
+      await init();
+      this.mode = 'sql';
+      this.promptPrefix = 'sql> ';
+      this.updatePrompt();
+      this.printSystem('SQLite ready. Type SQL statements, or EXIT to leave.');
+    },
     commands: {
-      SQL: async function () {
-        await init();
-        this.mode = 'sql';
-        this.promptPrefix = 'sql> ';
-        this.updatePrompt();
-      },
       __SQL_EVAL__: async function (input) {
         if (/^(EXIT|QUIT)$/i.test(input.trim())) {
           this.mode = 'shell'; this.promptPrefix = ''; this.updatePrompt();
@@ -37,6 +39,7 @@
     },
     runners: {
       '.sql': async function (filename, content) {
+        this.printSystem('Initializing SQL...');
         await init();
         this.printSystem('Executing ' + filename + '...');
         await execSQL(this, content);
