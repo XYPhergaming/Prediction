@@ -1,7 +1,6 @@
 (function () {
   'use strict';
-  const PYODIDE_VERSION = '0.24.1';
-  const PYODIDE_BASE = 'https://cdn.jsdelivr.net/pyodide/v' + PYODIDE_VERSION + '/full/';
+  const PYODIDE_CDN = 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js';
   let worker = null, ready = null, abortFn = null, blobUrl = null;
 
   function makeWorker() {
@@ -12,9 +11,8 @@
         const { id, type, code, input, pkg } = e.data;
         if (type === 'init') {
           try {
-            self.importScripts('${PYODIDE_BASE}pyodide.js');
+            self.importScripts('${PYODIDE_CDN}');
             pyodide = await loadPyodide({
-              indexURL: '${PYODIDE_BASE}',
               stdout: t => self.postMessage({ type: 'stdout', text: t }),
               stderr: t => self.postMessage({ type: 'stderr', text: t })
             });
@@ -161,17 +159,13 @@ def is_complete(src):
 
   Terminal.registerExtension({
     name: 'python',
-    info: 'Python Package installed successfully! Use RUN{python} to start the REPL, or RUN(file.py) to run a script.',
-    run: async function () {
-      this.printSystem('Initializing Python... (first load may take a few seconds)');
-      try { await init(); }
-      catch (e) { throw new Error('Python failed to start: ' + e.message); }
-      this.mode = 'python';
-      this.replBuffer = [];
-      this.promptPrefix = '>>> ';
-      this.updatePrompt();
-    },
+    info: 'Python Package installed successfully! Use PYTHON or RUN file.py to begin.',
     commands: {
+      PYTHON: async function () {
+        try { await init(); }
+        catch (e) { throw new Error('Python failed to start: ' + e.message); }
+        this.mode = 'python'; this.replBuffer = []; this.promptPrefix = '>>> '; this.updatePrompt();
+      },
       PIP: async function (arg) {
         const pkg = arg.trim();
         if (!pkg) throw new Error('Usage: PIP <package>');
@@ -179,7 +173,6 @@ def is_complete(src):
       },
       __PYTHON_EVAL__: async function (buf) { await runBuffer(this, buf); },
       __PYTHON_PIP__: async function (pkg) {
-        this.printSystem('Installing pip package: ' + pkg + '...');
         await init();
         await new Promise((res, rej) => {
           const id = 'p' + Math.random().toString(36).slice(2);
@@ -202,16 +195,8 @@ def is_complete(src):
       }
     },
     runners: {
-      '.py': async function (filename, content) {
-        this.printSystem('Initializing Python... (first load may take a few seconds)');
-        await init();
-        await runBuffer(this, [content]);
-      },
-      '.pyw': async function (filename, content) {
-        this.printSystem('Initializing Python... (first load may take a few seconds)');
-        await init();
-        await runBuffer(this, [content]);
-      }
+      '.py': async function (filename, content) { await init(); await runBuffer(this, [content]); },
+      '.pyw': async function (filename, content) { await init(); await runBuffer(this, [content]); }
     }
   });
 })();

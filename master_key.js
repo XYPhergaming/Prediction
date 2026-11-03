@@ -16,11 +16,12 @@
 
   T.registerExtension({
     name: 'master_key',
-    info: 'Master Key imported successfully! All advanced commands (PWD, LS, CAT, CALC, UPTIME, etc.) are now available.',
+    info: 'Master Key imported successfully! All advanced commands (LS, CAT, CALC, UPTIME, etc.) are now available.',
     commands: {
+      // File System
       PWD: function () { this.printSystem(this.cwd); },
       LS: async function (arg) {
-        const p = U.resolvePath(this.cwd, (arg || '').trim() || this.cwd);
+        const p = U.resolvePath(this.cwd, arg.trim() || this.cwd);
         const all = await S.keys('vfs');
         const pfx = p === '/' ? '/' : p + '/';
         const firsts = new Set();
@@ -71,7 +72,6 @@
             }
           }
         }
-        this.printSuccess('Copied: ' + a[0] + ' → ' + a[1]);
       },
       MV: async function (arg) {
         const a = tokenize(arg);
@@ -90,10 +90,9 @@
           }
         }
         await S.remove(src.path, 'vfs');
-        this.printSuccess('Moved: ' + a[0] + ' → ' + a[1]);
       },
       TREE: async function (arg) {
-        const root = U.resolvePath(this.cwd, (arg || '').trim() || '.');
+        const root = U.resolvePath(this.cwd, arg.trim() || '.');
         const all = await S.keys('vfs');
         const lines = [];
         const walk = async (dir, prefix) => {
@@ -115,6 +114,7 @@
         this.print(lines.join('\n'));
       },
 
+      // Calculator & Utilities
       CALC: function (arg) {
         if (!arg) throw new Error('Usage: CALC <expression>');
         try {
@@ -131,7 +131,7 @@
         this.printSystem(u);
       },
       RANDOM: function (arg) {
-        const a = (arg || '').trim().split(/\s+/);
+        const a = arg.trim().split(/\s+/);
         let min = 0, max = 100;
         if (a.length === 2) { min = parseInt(a[0], 10); max = parseInt(a[1], 10); }
         const range = max - min + 1;
@@ -150,6 +150,7 @@
         this.printSystem(p);
       },
 
+      // System Info
       WHOAMI: function () { this.printSystem(T.settings.username); },
       UPTIME: function () {
         const sec = Math.floor((Date.now() - start) / 1000);
@@ -173,6 +174,7 @@
         } else this.printSystem('Memory API not supported.');
       },
 
+      // Text Tools
       BASE64: function (arg) {
         const bytes = new TextEncoder().encode(arg);
         let bin = '';
