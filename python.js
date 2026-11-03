@@ -1,6 +1,7 @@
 (function () {
   'use strict';
-  const PYODIDE_CDN = 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js';
+  const PYODIDE_VERSION = '0.24.1';
+  const PYODIDE_BASE = 'https://cdn.jsdelivr.net/pyodide/v' + PYODIDE_VERSION + '/full/';
   let worker = null, ready = null, abortFn = null, blobUrl = null;
 
   function makeWorker() {
@@ -11,8 +12,9 @@
         const { id, type, code, input, pkg } = e.data;
         if (type === 'init') {
           try {
-            self.importScripts('${PYODIDE_CDN}');
+            self.importScripts('${PYODIDE_BASE}pyodide.js');
             pyodide = await loadPyodide({
+              indexURL: '${PYODIDE_BASE}',
               stdout: t => self.postMessage({ type: 'stdout', text: t }),
               stderr: t => self.postMessage({ type: 'stderr', text: t })
             });
