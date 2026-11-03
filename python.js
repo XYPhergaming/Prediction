@@ -32,7 +32,11 @@ class _T(ast.NodeTransformer):
         return node
 def transform(src):
     try:
-        t = _T().visit(ast.parse(src))
+        tree = ast.parse(src)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Name) and node.id == 'input' and isinstance(node.ctx, ast.Store):
+                return src
+        t = _T().visit(tree)
         return ast.unparse(t)
     except Exception:
         return src
@@ -117,7 +121,7 @@ def is_complete(src):
       setTimeout(() => { worker.removeEventListener('message', h); res(true); }, 5000);
     });
     if (!complete) { session.promptPrefix = '... '; session.updatePrompt(); return; }
-    
+
     session.replBuffer = [];
     session.promptPrefix = '>>> ';
     session.executing = true;
@@ -161,6 +165,11 @@ def is_complete(src):
         try { await init(); }
         catch (e) { throw new Error('Python failed to start: ' + e.message); }
         this.mode = 'python'; this.replBuffer = []; this.promptPrefix = '>>> '; this.updatePrompt();
+      },
+      PIP: async function (arg) {
+        const pkg = arg.trim();
+        if (!pkg) throw new Error('Usage: PIP <package>');
+        await Terminal.commands['__PYTHON_PIP__'].call(this, pkg);
       },
       __PYTHON_EVAL__: async function (buf) { await runBuffer(this, buf); },
       __PYTHON_PIP__: async function (pkg) {
